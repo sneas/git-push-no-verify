@@ -1,30 +1,40 @@
 #!/usr/bin/env node
 
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 
-const pushUpstream = (prevError, prevStderr) => {
-    const gitPush = prevStderr.match(/git push --set-upstream.+/gim).pop();
+function pushUpstream(gitPushSetUpstreamCommand) {
+    const arguments = gitPushSetUpstreamCommand.split(' ');
+    arguments.shift();
 
-    if (!gitPush) {
-        process.stderr.write(prevStderr);
-        process.exit(prevError.code);
-        return;
-    }
+    const gitPush = spawn('git', arguments, {stdio: [process.stdin, process.stdout, process.stderr]});
+    gitPush.on('close', code => process.exitCode = code);
+}
 
-    exec(`${gitPush} --no-verify`, (error, stdout, stderr) => {
-        process.stdout.write(stdout);
-        process.stderr.write(stderr);
-        process.exit(error ? error.code : 0);
+function push() {
+    let gitPushSetUpstreamCommand = '';
+
+    const gitPush = spawn('git', ['push', '--no-verify'], {stdio: [process.stdin, process.stdout]});
+
+    gitPush.stderr.on('data', (data) => {
+        const upstream = data.toString().match(/git push --set-upstream.+/gim);
+
+        if (upstream) {
+            gitPushSetUpstreamCommand = `${upstream.pop()} --no-verify`;
+        }
+
+        process.stderr.write(data);
     });
-};
 
-exec('git push --no-verify', (error, stdout, stderr) => {
-    if (error && error.code === 128) {
-        pushUpstream(error, stderr);
-        return;
-    }
+    gitPush.on('close', (code) => {
+        if (code === 128 && gitPushSetUpstreamCommand) {
+            console.log('Automatically setting upstream...');
+            console.log(`Running ${gitPushSetUpstreamCommand}\n`);
+            pushUpstream(gitPushSetUpstreamCommand);
+            return;
+        }
 
-    process.stdout.write(stdout);
-    process.stderr.write(stderr);
-    process.exit(error ? error.code : 0);
-});
+        process.exitCode = code;
+    });
+}
+
+push();
