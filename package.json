@@ -1,6 +1,6 @@
 {
   "name": "git-push-no-verify",
-  "version": "0.0.0-development",
+  "version": "1.0.0",
   "description": "A simple console tool to bypass husky check on push",
   "main": "index.js",
   "scripts": {
