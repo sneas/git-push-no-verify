@@ -25,7 +25,7 @@ function push() {
 
     gitPush.on('close', (code) => {
         if (code === 128) {
-            console.log('Setting upstream...\n');
+            console.log('Adding upstream...\n');
             pushUpstream();
             return;
         }

@@ -2,6 +2,8 @@
 
 A simple console tool to bypass husky check on `git push`.
 
+The tool automatically runs `git push` with `--set-upstream` param when needed.
+
 ## Installation
 
 ```bash
